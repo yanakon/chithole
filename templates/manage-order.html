@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHITHOLE CNX - Tap Management</title>
+    <!-- เพิ่ม Font Awesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link rel="icon" href="/static/favicon.png" type="image/x-icon"> <!-- เพิ่มไอคอน -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/admin">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-beer"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">รายการเบียร์</div>
+            </a>
+            <hr class="sidebar-divider">
+            <li class="nav-item active">
+                <a class="nav-link" href="/admin">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>หน้าจัดการเบียร์</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/manage-order">
+                    <i class="fas fa-fw fa-sort"></i>
+                    <span>จัดเรียงลำดับเบียร์</span>
+                </a>
+            </li>
+            <hr class="sidebar-divider">
+        </ul>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <!-- Topbar (navbar) -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <h4 class="text-primary">จัดเรียงลำดับเบียร์</h4>
+                </nav>
+
+                <!-- Content (main) goes here -->
+                <div class="container-fluid">
+                    <h2>รายการเบียร์</h2>
+                    <table class="table table-bordered" id="beer-table">
+                        <thead>
+                            <tr>
+                                <th>Tap Number</th> <!-- เพิ่มคอลัมน์ Tap Number -->
+                                <th>Brand</th>
+                                <th>Beer Name</th>
+                                <th>ABV</th>
+                            </tr>
+                        </thead>
+                        <tbody id="beer-list">
+                            {% for i in range(1, 17) %} <!-- loop 1-16 -->
+                                <tr data-id="{{ i }}">
+                                    <td>{{ i }}</td> <!-- แสดงหมายเลข Tap -->
+                                    {% set beer = beers[i - 1] if i <= beers|length else None %}
+                                    {% if beer %}
+                                    <td>{{ beer.bands }}</td>
+                                    <td>{{ beer.beer }}</td>
+                                    <td>{{ beer.abv }}%</td>
+                                    {% else %}
+                                    <td colspan="3" class="text-center">Unavailable for Now</td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <button id="save-order" class="btn btn-primary">บันทึกลำดับ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+
+    <script>
+        // ใช้ Sortable.js เพื่อทำ drag-and-drop
+        const beerList = document.getElementById('beer-list');
+        const sortable = new Sortable(beerList, {
+            animation: 150,
+            onEnd(evt) {
+                console.log("New order:", sortable.toArray());
+            }
+        });
+
+        // ฟังก์ชันส่งข้อมูลลำดับใหม่ไปยัง server
+        document.getElementById('save-order').addEventListener('click', function() {
+            const beerOrder = sortable.toArray(); // ดึงลำดับใหม่
+
+            fetch('/update-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ order: beerOrder })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // แจ้งเตือนเมื่อบันทึกลำดับเสร็จ
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+
+</html>

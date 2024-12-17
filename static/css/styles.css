@@ -1,0 +1,42 @@
+body {
+    background-image: url("/static/images/bg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #ff9f21; /* สีข้อความหลัก */
+    position: relative;
+    overflow: hidden;
+}
+
+/* ปรับแต่งกรอบของตาราง */
+.table, .table th, .table td {
+    border: 3px solid black;  /* กำหนดกรอบสีดำและความหนา 3px */
+    border-collapse: collapse; /* ทำให้กรอบของเซลล์ไม่ทับซ้อนกัน */
+}
+
+/* ปรับแต่งตาราง */
+.table th, .table td {
+    color: #ff9f21; /* เปลี่ยนสีตัวอักษรเป็น */
+    font-size: 2.6rem; /* เพิ่มขนาดตัวอักษร */
+    font-weight: bold; /* ทำให้ตัวอักษรหนาขึ้น */
+    line-height: 1.5; /* เพิ่มระยะห่างบรรทัด */
+    text-align: center; /* จัดข้อความให้อยู่กลาง */
+    text-shadow: 1px 1px 1px black, 0px 0px 0px black, 0px 0px 0px black, -1px -3px 2px black;
+}
+
+/* ปรับแต่งหัวตาราง */
+.table th {
+    background-color: #f0e9e600; /* เพิ่มพื้นหลังที่มืดขึ้นสำหรับหัวตาราง */
+    padding: 15px; /* เพิ่มการเว้นระยะห่าง */
+    font-size: 2.6rem; /* ขยายขนาดตัวอักษร */
+    color: #ffffff; /* เปลี่ยนสีตัวอักษร */
+}
+
+/* ปรับแต่งพื้นหลังของแถวในตาราง */
+.table tbody tr:nth-child(even) {
+    background-color: #ffbb002d; /* พื้นหลังสีมืดสำหรับแถวที่คู่ */
+}
+
+.table tbody tr:nth-child(odd) {
+    background-color: #000000a9(0, 0%, 0%, 0.5); /* พื้นหลังสีมืดสำหรับแถวที่คี่ */
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHITHOLE CNX - Edit Beer</title>
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
+    <link rel="icon" href="/static/favicon.png" type="image/x-icon"> <!-- เพิ่มไอคอน -->
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/admin">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-beer"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">รายการเบียร์</div>
+            </a>
+            <hr class="sidebar-divider">
+            <li class="nav-item active">
+                <a class="nav-link" href="/admin">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>หน้าจัดการเบียร์</span>
+                </a>
+            </li>
+            <hr class="sidebar-divider">
+        </ul>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <!-- Topbar (navbar) -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <h4 class="text-primary">แก้ไขเบียร์</h4>
+                </nav>
+
+                <div class="container-fluid">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">แก้ไขเบียร์</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- แสดงข้อความแจ้งเตือน -->
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    <div class="alert alert-{{ messages[0][0] }}">
+                                        {{ messages[0][1] }}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+
+                            <!-- edit_beer.html -->
+                            <form method="POST">
+                                <div class="form-group">
+                                    <label for="bands">Brand</label>
+                                    <input type="text" class="form-control" id="bands" name="bands" value="{{ beer.bands }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="beer">Beer Name</label>
+                                    <input type="text" class="form-control" id="beer" name="beer" value="{{ beer.beer }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="abv">ABV (%)</label>
+                                    <input type="number" class="form-control" id="abv" name="abv" value="{{ beer.abv }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="tap_number">Tap Number (กรอกหมายเลขแท็บ 1-16)</label>
+                                    <input type="number" class="form-control" id="tap_number" name="tap_number" value="{{ beer.tap_number }}" placeholder="กรอกหมายเลขแท็บ 1-16 หรือปล่อยว่างไว้">
+                                </div>
+                                <button type="submit" class="btn btn-primary">แก้ไข</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+</body>
+
+</html>

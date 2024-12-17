@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Beer - CHITHOLE CNX</title>
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
+    <link rel="icon" href="/static/favicon.png" type="image/x-icon"> <!-- เพิ่มไอคอน -->
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/admin">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-beer"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">รายการเบียร์</div>
+            </a>
+            <hr class="sidebar-divider">
+            <li class="nav-item active">
+                <a class="nav-link" href="/admin">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>หน้าจัดการเบียร์</span>
+                </a>
+            </li>
+            <hr class="sidebar-divider">
+        </ul>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <!-- Topbar (navbar) -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <h4 class="text-primary">เพิ่มเบียร์ใหม่</h4>
+                </nav>
+
+                <div class="container-fluid">
+                    <!-- ข้อความแจ้งเตือน -->
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    <div class="alert alert-success">
+                        {{ messages[0] }}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Form for Adding Beer -->
+                    <form method="POST">
+                        <div class="form-group">
+                            <label for="bands">Brand</label>
+                            <input type="text" class="form-control" id="bands" name="bands" placeholder="กรอกแบรนด์" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="beer">Beer Name</label>
+                            <input type="text" class="form-control" id="beer" name="beer" placeholder="กรอกชื่อเบียร์" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="abv">ABV (%)</label>
+                            <input type="number" step="0.01" class="form-control" id="abv" name="abv" placeholder="กรอกเปอร์เซ็นต์ ABV" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">เพิ่มเบียร์</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+</body>
+
+</html>

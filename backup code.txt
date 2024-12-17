@@ -1,0 +1,250 @@
+app.py (เพิ่ม ลบ แก้ไข ซ่อน แสดง) โค้ดก่อนที่จะอัพไปเป็น version ที่ เพิ่มแท็บเบียร์
+
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from sqlalchemy.exc import IntegrityError
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+
+# กำหนด path สำหรับฐานข้อมูล SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:/Users/52/Desktop/beer-list/instance/beer-database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+# โมเดลสำหรับข้อมูลเบียร์
+class Beer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bands = db.Column(db.String(50), nullable=False)
+    beer = db.Column(db.String(50), nullable=False)
+    abv = db.Column(db.Float, nullable=False)
+    is_visible = db.Column(db.Boolean, default=True)  # เพิ่มคอลัมน์ is_visible
+
+# ฟังก์ชันซ่อนแสดงเบียร์  
+@app.route('/toggle-visibility/<int:id>', methods=['POST'])
+def toggle_visibility(id):
+    beer = Beer.query.get(id)
+    if beer:
+        beer.is_visible = not beer.is_visible
+        db.session.commit()
+        
+        # ส่งข้อความแจ้งเตือน
+        if beer.is_visible:
+            flash(f"ทำการแสดง {beer.beer} แล้ว", 'success')  # ข้อความเมื่อแสดง
+        else:
+            flash(f"ทำการซ่อน {beer.beer} แล้ว", 'danger')  # ข้อความเมื่อซ่อน
+    return redirect(url_for('admin'))
+
+# ฟังก์ชันจัดการเบียร์
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST':
+        beer_ids = request.form.getlist('beer_ids[]')  # รับ ID เบียร์จากฟอร์ม
+        updated_beers = []  # สร้างลิสต์เพื่อเก็บเบียร์ที่มีการอัปเดต
+
+        for beer_id in beer_ids:  # ลบการอัปเดต beer_tab
+            beer = Beer.query.get(beer_id)  # ดึงข้อมูลเบียร์จาก ID
+            if beer:  # ตรวจสอบว่าเบียร์มีอยู่จริง
+                updated_beers.append(f"Beer updated: {beer.beer}")  # แค่เก็บข้อความว่าได้อัปเดตเบียร์
+
+        if updated_beers:
+            try:
+                db.session.commit()  # บันทึกการเปลี่ยนแปลงทั้งหมด
+                for message in updated_beers:
+                    flash(message, 'success')  # แสดงข้อความแจ้งเตือนแต่ละอัน
+            except IntegrityError as e:
+                db.session.rollback()  # ยกเลิกการเปลี่ยนแปลงถ้ามีปัญหา
+                flash(f"Error updating beer: {str(e)}", 'danger')
+
+        return redirect(url_for('admin'))  # รีเฟรชหน้าจัดการเบียร์
+
+    # ดึงข้อมูลเบียร์ทั้งหมดจากฐานข้อมูล
+    beers = Beer.query.all()
+
+    # ส่งข้อมูล beers ไปยังเทมเพลต
+    return render_template('admin.html', beers=beers)
+
+# เพิ่ม route สำหรับการดึงข้อมูลเบียร์ในรูปแบบ HTML
+@app.route('/get-beers', methods=['GET'])
+def get_beers():
+    beers = Beer.query.all()  # ดึงข้อมูลเบียร์ทั้งหมด
+    return render_template('beer_table_rows.html', beers=beers)
+
+# หน้าสำหรับแสดงบนจอ
+@app.route('/beer-menu')
+def beer_menu():
+    beers = Beer.query.all()  # ดึงข้อมูลเบียร์ทั้งหมดจากฐานข้อมูล
+    return render_template('beer_menu.html', beers=beers)
+
+# หน้าแรกแสดงข้อมูลเบียร์
+@app.route('/')
+def index():
+    beers = Beer.query.all()  # ดึงข้อมูลเบียร์ทั้งหมดจากฐานข้อมูล
+    return render_template('admin.html', beers=beers)
+
+# หน้าเพิ่มเบียร์
+@app.route('/add-beer', methods=['GET', 'POST'])
+def add_beer():
+    if request.method == 'POST':
+        data = request.form
+        new_beer = Beer(
+            bands=data['bands'],
+            beer=data['beer'],
+            abv=data['abv']
+        )
+        db.session.add(new_beer)
+        db.session.commit()
+        return redirect(url_for('index'))  # กลับไปที่หน้าแสดงข้อมูลเบียร์
+    return render_template('edit_beer.html', beer=None)
+
+# หน้าแก้ไขเบียร์
+@app.route('/edit-beer/<int:id>', methods=['GET', 'POST'])
+def edit_beer(id):
+    beer = Beer.query.get_or_404(id)
+    if request.method == 'POST':
+        data = request.form
+        beer.bands = data['bands']
+        beer.beer = data['beer']
+        beer.abv = data['abv']
+        db.session.commit()
+        return redirect(url_for('index'))  # กลับไปที่หน้าแสดงข้อมูลเบียร์
+    return render_template('edit_beer.html', beer=beer)
+
+# ลบเบียร์
+@app.route('/delete-beer/<int:id>', methods=['GET'])
+def delete_beer(id):
+    beer = Beer.query.get_or_404(id)
+    db.session.delete(beer)
+    db.session.commit()
+    return redirect(url_for('index'))  # กลับไปที่หน้าแสดงข้อมูลเบียร์
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+admin.html (เพิ่ม ลบ แก้ไข ซ่อน แสดง) โค้ดก่อนที่จะอัพไปเป็น version ที่ เพิ่มแท็บเบียร์
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHITHOLE CNX - Admin Desk</title>
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/admin">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-beer"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">รายการเบียร์</div>
+            </a>
+            <hr class="sidebar-divider">
+            <li class="nav-item active">
+                <a class="nav-link" href="/admin">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>หน้าจัดการเบียร์</span>
+                </a>
+            </li>
+            <hr class="sidebar-divider">
+        </ul>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <!-- Topbar (navbar) -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <h4 class="text-primary">หน้าจัดการเบียร์</h4>
+                </nav>
+
+                <div class="container-fluid">
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex">
+                            <a href="/add-beer" class="btn btn-sm btn-primary shadow-sm mr-2">
+                                <i class="fas fa-plus fa-sm text-white-50"></i> เพิ่มเบียร์ใหม่
+                            </a>
+                        </div>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    <div class="alert-container">
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">รายการเบียร์</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="table-layout: fixed;">
+                                    <thead>
+                                        <tr>
+                                            <th>Brand</th>
+                                            <th>Beer Name</th>
+                                            <th style="width: 80px;">ABV</th> <!-- กำหนด width สำหรับคอลัมน์ ABV -->
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for beer in beers %}
+                                        <tr>
+                                            <td>{{ beer.bands }}</td>
+                                            <td>{{ beer.beer }}</td>
+                                            <td>{{ beer.abv }}%</td> <!-- ข้อมูล ABV -->
+                                            <td>
+                                                <!-- Actions -->
+                                                <a href="/edit-beer/{{ beer.id }}" class="btn btn-warning btn-sm">แก้ไข</a>
+                                                <a href="/delete-beer/{{ beer.id }}" class="btn btn-danger btn-sm">ลบ</a>
+                                                
+                                                <!-- Toggle Visibility -->
+                                                <form action="{{ url_for('toggle_visibility', id=beer.id) }}" method="POST" class="d-inline-block">
+                                                    <button type="submit" class="btn btn-{{ 'success' if beer.is_visible else 'danger' }} btn-sm">
+                                                        {% if beer.is_visible %}
+                                                        ซ่อน
+                                                        {% else %}
+                                                        แสดง
+                                                        {% endif %}
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+</body>
+
+</html>

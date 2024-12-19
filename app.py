@@ -7,11 +7,13 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 # กำหนด path สำหรับฐานข้อมูล SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:/Users/52/Desktop/beer-list/instance/beer-database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/beer-database.db'  # ใช้ relative path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# สร้างตัวเชื่อมต่อฐานข้อมูล
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
 
 # โมเดลสำหรับข้อมูลเบียร์
 class Beer(db.Model):

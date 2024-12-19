@@ -14,7 +14,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))  # เส้นทางข
 db_path = os.path.join(basedir, 'instance', 'beer-database.db')  # ตั้งฐานข้อมูลในโฟลเดอร์ 'instance'
 
 # กำหนดค่า SQLAlchemy URI สำหรับฐานข้อมูล SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'  # ใช้ path ที่กำหนดในตัวแปร db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # กำหนด db และ migrate
@@ -72,16 +72,6 @@ def admin():
     
     # ดึงข้อมูลทั้งหมดของเบียร์และเรียงตาม tap_number
     beers = Beer.query.order_by(Beer.tap_number).all()
-    return render_template('admin.html', beers=beers)
-
-    # ดึงข้อมูลเบียร์ที่มี tap_number และไม่มี tap_number แยกกัน
-    beers_with_tap = Beer.query.filter(Beer.tap_number != None).order_by(Beer.tap_number).all()  # เบียร์ที่มี tap_number
-    beers_without_tap = Beer.query.filter(Beer.tap_number == None).all()  # เบียร์ที่ไม่มี tap_number
-
-    # รวมเบียร์ที่มี tap_number และไม่มี tap_number
-    beers = beers_with_tap + beers_without_tap
-
-    # ส่งข้อมูล beers ไปยังเทมเพลต
     return render_template('admin.html', beers=beers)
 
 
@@ -164,4 +154,46 @@ def edit_beer(id):
         if tap_number == '':
             beer.tap_number = None
         else:
-     
+            try:
+                tap_number = int(tap_number)
+
+                if tap_number < 1 or tap_number > 16:
+                    flash("หมายเลขแท็บต้องอยู่ระหว่าง 1 ถึง 16", "danger")
+                    return redirect(url_for('edit_beer', id=beer.id))
+
+                # ตรวจสอบว่า tap_number ซ้ำกับเบียร์อื่นหรือไม่
+                existing_beer = Beer.query.filter_by(tap_number=tap_number).first()
+                if existing_beer and existing_beer.id != beer.id:
+                    flash(f"แท็บหมายเลข {tap_number} ถูกไปใช้แล้ว กรุณาเปลี่ยนแท็บ", "danger")
+                    return redirect(url_for('edit_beer', id=beer.id))  # Redirect ไปยังหน้า edit_beer
+
+                # อัปเดต tap_number ให้กับเบียร์
+                beer.tap_number = tap_number
+
+            except ValueError:
+                flash("หมายเลขแท็บต้องเป็นตัวเลข", "danger")
+                return redirect(url_for('edit_beer', id=beer.id))  # Redirect ไปยังหน้า edit_beer
+
+        try:
+            db.session.commit()  # บันทึกการเปลี่ยนแปลง
+            flash("อัปเดตเบียร์สำเร็จ", "success")
+            return redirect(url_for('index'))
+        except IntegrityError as e:
+            db.session.rollback()  # ยกเลิกการเปลี่ยนแปลงหากเกิดข้อผิดพลาด
+            flash("เกิดข้อผิดพลาดในการอัปเดตเบียร์", "danger")
+
+    return render_template('edit_beer.html', beer=beer)
+
+
+# ลบเบียร์
+@app.route('/delete-beer/<int:id>', methods=['GET'])
+def delete_beer(id):
+    beer = Beer.query.get_or_404(id)
+    db.session.delete(beer)
+    db.session.commit()
+    return redirect(url_for('index'))  # กลับไปที่หน้าแสดงข้อมูลเบียร์
+
+
+# รันแอปด้วย waitress
+if __name__ == '__main__':
+    serve(app, host='0.0.0.0', port=5000)  # ใช้ waitress รันแอปบน port 5000
